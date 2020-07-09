@@ -1,4 +1,8 @@
 from room import Room
+from player import Player
+from item import Item
+  
+import random
 
 # Declare all the rooms
 
@@ -21,6 +25,12 @@ chamber! Sadly, it has already been completely emptied by
 earlier adventurers. The only exit is to the south."""),
 }
 
+overlook = room['overlook']
+foyer = room['foyer']
+outside = room['outside']
+treasure = room['treasure']
+narrow = room['narrow']
+
 
 # Link rooms together
 
@@ -38,7 +48,7 @@ room['treasure'].s_to = room['narrow']
 #
 
 # Make a new player object that is currently in the 'outside' room.
-
+player = Player(input("Enter player name: "), outside)
 # Write a loop that:
 #
 # * Prints the current room name
@@ -49,3 +59,82 @@ room['treasure'].s_to = room['narrow']
 # Print an error message if the movement isn't allowed.
 #
 # If the user enters "q", quit the game.
+directions = ["n", "s", "e", "w"]
+
+rock = Item("rock","Its a rock")
+bigrock = Item("BigRock","It's slightly bigger than the other rock")
+bottle = Item("bottle","It's empty")
+torch = Item("torch","a small torch")
+gold = Item("GoldRock","It smells like gold but it looks like a rock")
+
+room['outside'].items = [rock,bigrock]
+room['foyer'].items = [bottle]
+room['overlook'].items = [torch]
+room['narrow'].items = [gold]
+
+while True:
+    room_items = player.room.items
+    player_items = player.items
+    
+
+    print(f"\nYou are in the {player.room.name}.")
+    print(f"{player.room.description}...")
+
+    user_input = input(f"\nWhich direction do you travel? ").lower()
+
+    cmd = user_input.split(" ")
+    # move input
+    if user_input in directions:
+        player.travel(player.room, user_input)
+    #check items
+    elif user_input == "i" or user_input == "inventory":
+        print("\nInventory:")
+        if len(player_items) == 0:
+            print("No items in your inventory")
+        for i in range(len(player_items)):
+            print(
+                f'{i + 1}) {player_items[i].name}: {player_items[i].description}')
+    #check room
+    elif user_input == "c" or user_input == "check":
+       
+            print("\nItems in room:")
+            # no items in room
+            if len(room_items) == 0:
+                print("No items in room\n")
+            # list of items
+            for i in range(len(room_items)):
+                print(
+                    f'{i + 1}) {room_items[i].name}: {room_items[i].description}')
+    #take item
+    elif len(cmd) == 2 and cmd[0] == "get" or cmd[0] == "take":
+        list_length = len(player_items)
+
+        for item in room_items:
+
+            if item.name.lower() == cmd[1]:
+                player_items.append(item)
+                room_items.remove(item)
+                item.Take()
+
+        if list_length == len(player_items):
+            print(f"\nNo {cmd[1]} in this room.")  
+    #drop item
+    elif len(cmd) == 2 and cmd[0] == "drop":
+        list_length = len(player_items)
+        # check if item exists
+        for item in player_items:
+        # adds item to inventory
+            if item.name.lower() == cmd[1]:
+                room_items.append(item)
+                player_items.remove(item)
+                item.Drop()
+        # return error
+        if list_length == len(player_items):
+            print(f"\nThere is no {cmd[1]} in your inventory.")
+    #quit game
+    elif user_input == "q":
+        print("quitting")
+        break
+
+    else:
+        print("\nInput Invalid")
