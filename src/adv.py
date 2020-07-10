@@ -1,28 +1,28 @@
 from room import Room
 from player import Player
 from item import Item
-  
+from lightsource import Lightsource 
 import random
 
 # Declare all the rooms
 
 room = {
     'outside':  Room("Outside Cave Entrance",
-                     "North of you, the cave mount beckons"),
+                     "North of you, the cave mount beckons", True),
 
     'foyer':    Room("Foyer", """Dim light filters in from the south. Dusty
-passages run north and east."""),
+passages run north and east.""", False),
 
     'overlook': Room("Grand Overlook", """A steep cliff appears before you, falling
 into the darkness. Ahead to the north, a light flickers in
-the distance, but there is no way across the chasm."""),
+the distance, but there is no way across the chasm.""", True),
 
     'narrow':   Room("Narrow Passage", """The narrow passage bends here from west
-to north. The smell of gold permeates the air."""),
+to north. The smell of gold permeates the air.""", True),
 
     'treasure': Room("Treasure Chamber", """You've found the long-lost treasure
 chamber! Sadly, it has already been completely emptied by
-earlier adventurers. The only exit is to the south."""),
+earlier adventurers. The only exit is to the south.""", False),
 }
 
 overlook = room['overlook']
@@ -64,12 +64,13 @@ directions = ["n", "s", "e", "w"]
 rock = Item("rock","Its a rock")
 bigrock = Item("BigRock","It's slightly bigger than the other rock")
 bottle = Item("bottle","It's empty")
-torch = Item("torch","a small torch")
+stick = Item("stick","it is a stick")
+lamp = Lightsource("lamp","It is a lamp",False)
 gold = Item("GoldRock","It smells like gold but it looks like a rock")
 
 room['outside'].items = [rock,bigrock]
 room['foyer'].items = [bottle]
-room['overlook'].items = [torch]
+room['overlook'].items = [stick,lamp]
 room['narrow'].items = [gold]
 
 while True:
@@ -81,6 +82,16 @@ while True:
     print(f"{player.room.description}...")
 
     user_input = input(f"\nWhich direction do you travel? ").lower()
+    #check if lightsource is on
+    def is_lightsource_on():
+        result = 0
+        for item in player_items:
+            if item.name == "lamp" and item.is_light == True:
+                result += 1
+        if result == 0:
+            return False
+        else:
+            return True
 
     cmd = user_input.split(" ")
     # move input
@@ -96,7 +107,8 @@ while True:
                 f'{i + 1}) {player_items[i].name}: {player_items[i].description}')
     #check room
     elif user_input == "c" or user_input == "check":
-       
+        if player.room.is_light == True or is_lightsource_on():
+
             print("\nItems in room:")
             # no items in room
             if len(room_items) == 0:
@@ -105,19 +117,24 @@ while True:
             for i in range(len(room_items)):
                 print(
                     f'{i + 1}) {room_items[i].name}: {room_items[i].description}')
+        else:
+            print("\nIt's pitch black!")
     #take item
     elif len(cmd) == 2 and cmd[0] == "get" or cmd[0] == "take":
         list_length = len(player_items)
+        if player.room.is_light == True or is_lightsource_on():
+            for item in room_items:
 
-        for item in room_items:
+                if item.name.lower() == cmd[1]:
+                    player_items.append(item)
+                    room_items.remove(item)
+                    item.Take()
 
-            if item.name.lower() == cmd[1]:
-                player_items.append(item)
-                room_items.remove(item)
-                item.Take()
+            if list_length == len(player_items):
+                print(f"\nNo {cmd[1]} in this room.")  
+        else:
+            print("\nGood luck finding that in the dark!")
 
-        if list_length == len(player_items):
-            print(f"\nNo {cmd[1]} in this room.")  
     #drop item
     elif len(cmd) == 2 and cmd[0] == "drop":
         list_length = len(player_items)
@@ -131,6 +148,15 @@ while True:
         # return error
         if list_length == len(player_items):
             print(f"\nThere is no {cmd[1]} in your inventory.")
+    #toggle light
+    elif user_input == "lamp":
+        result = 0
+        for item in player_items:
+            if item.name == "lamp":
+                result += 1
+                lamp.toggle()
+        if result == 0:
+            print("\nYou don't have a lamp in your inventory.")
     #quit game
     elif user_input == "q":
         print("quitting")
